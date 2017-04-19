@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>STAR RACE: MILLENNIUM FALCON</title>
+	<link href='https://fonts.googleapis.com/css?family=Titillium+Web:700' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="css/normalize.css">
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+
+
+	
+</head>
+<body>
+	<header class="cf">
+
+	<h1>STAR RACE: MILLENNIUM FALCON</h1>
+	<div id="music" class="button">MUSIC ON</div>
+
+	<!-- <div id="screenCrawl"><iframe width="1152" height="698" src="http://play.starwars.com/html5/starwars_crawlcreator/?cid=null" frameborder="0" scrolling="no"></iframe></div> -->
+	
+	<div id="instructions">		
+		<div id="saber">
+		<img class="light cf" src="images/anakin-3.svg">
+		</div>
+		<h2>Help Rey Find Luke Skywalker!</h2>
+		<p>MOVE: <span class="info">
+			<img src="images/up.gif" alt="Up arrow"> , 
+			<img src="images/down.gif" alt="down arrow"> , 
+			<img src="images/left.gif" alt="Left arrow"> , 
+			<img src="images/right.gif" alt="right arrow">
+		</span> </p>
+		<p>Hyperdrive/BOOST: <span class="info">(HOLD) SHIFT </span></p><div class="gif"></div>
+		<p>Fire Lazer: <span class="info">SPACEBAR</span> </p>
+		<br />
+		<div id="gameStart">START</div>
+	</div>
+	<div id="lifeBar">HEALTH// 		
+		<div class="bar"></div>
+	</div>
+	<div id="bossLife" class="cf">
+		KYLO REN
+		<span class="bossLb"></span>	
+	</div>	
+	<div id="score">SCORE// <span></span></div>
+	
+	<div id="restart">
+			<div id="winImg"></div>
+			<h2>You FOUND LUKE SKYWALKER!</h2>
+			<p>Return To Base For Your Next Mission!</p>
+			<div class="button again win">Play Again?</div>
+	</div>
+	</header>
+	<main id="gameStage" class="cf">			
+			<div id="falcon"></div>
+			<div id="next">
+			<h2>Next Level unlocked!</h2><div class="button again">START NEXT LEVEL</div>
+			</div>
+			
+	</main>
+<!--  javascript goes below elements -->
+<script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.spritely/0.6.8/jquery.spritely.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jquery.transit/0.9.12/jquery.transit.min.js"></script>
+
+<script>
+	var falcon = $('#falcon');
+	var stage = $('#gameStage');
+	var bossBar = $('#bossLife');
+	var crawl =$('#screenCrawl');
+	var gameRunning = false;
+	var speed = 6; 
+	var lives = 10;
+	var bossLives = 20;
+	var score = 0;
+	var dir = {
+		up: false,
+		down: false,
+		left: false,
+		right: false
+	},
+	speed = 2;
+	var falconTheme = new Audio('sounds/falcon.mp3');
+	var sound = true;
+	var fireGun = new Audio('sounds/firelazer.mp3');
+	var boostFalcon= new Audio('sounds/hyperdrive.mp3');
+	var tieFighter = new Audio('sounds/tieFighter.mp3')
+var createEnemyInt;
+var bossCreated = false;
+var bossRelease = 0;
+var reStart = $('#restart');
+$('#score span').text(score);
+
+
+//BEGIN SCREEN
+
+stage.hide();
+reStart.hide();
+bossBar.hide();
+$('#lifeBar').hide();
+$('#score').hide();
+$('#gameStart').show();
+$('#instructions').show();
+var next = $('#next');
+next.hide();
+var level = 1;
+
+
+//start game
+function startGame(){
+	crawl.hide();
+	falconTheme.play();
+falconTheme.loop=true;
+	gameRunning = true;
+	bossRelease = score+40;
+	bossCreated = false;
+	bossLives = 20;
+	bossBar.hide();
+	createEnemy();
+	$('#gameStage').show();
+	$('#lifeBar').show();
+	$('#score').show();
+	$('#falcon').show();
+	$('#gameStart').hide();
+	$('#instructions').hide();
+	next.hide();
+	createEnemyInt = setInterval(createEnemy, 1000);
+	theLoop = window.requestAnimationFrame(gameLoop);
+	if(level == 1){
+	stage.css({'background': 'url(images/spaceStage.jpg) repeat-x'});
+}else if(level == 2){
+	stage.css({'background': 'url(images/forestStage.jpg) repeat-x'});
+}else if(level == 3){
+	stage.css({'background': 'url(images/snowStage.png) repeat-x'});
+}
+	stage.pan({fps:30, speed:2, dir:'left'});
+}//end startGame
+
+$('#gameStart').click(startGame);
+
+//POSITION AND MOVEMENT
+$(document).keyup( function(e){
+	//up:38 down: 40 left:37 right:39 = arrows and value
+	//aswd movement = w:87 s:83 a:65 d:68
+	if(e.which == 38 || e.which == 87){
+		//up
+		dir.up = false;
+	}
+	if(e.which == 40 || e.which == 83){
+		//down
+		dir.down = false;
+	}
+	if(e.which == 37 || e.which == 65){
+		//left
+		dir.left = false;
+	}
+	if(e.which == 39 || e.which == 68){
+		//right
+		dir.right = false;
+	}
+//SHIFT
+if(e.which == 16){
+	speed = 2;
+	falcon.destroy();
+}
+})// document.keyup()
+
+$(document).keydown( function(e){
+	//up:38 down: 40 left:37 right:39 = arrows and value
+	//aswd movement = w:87 s:83 a:65 d:68	
+	if(e.which == 38 || e.which == 87){
+		//up
+		dir.up = true;
+	}
+	if(e.which == 40 || e.which == 83){
+		//down
+		dir.down = true;
+	}
+	if(e.which == 37 || e.which == 65){
+		//left
+		dir.left = true;
+	}
+	if(e.which == 39 || e.which == 68){
+		//right
+		dir.right = true;
+	}
+// shift
+if(e.which == 16){
+	speed = 6;
+	playEffect(boostFalcon);
+	falcon.sprite({fps: 12, no_of_frames: 2});
+}
+//spacebar
+if(e.which == 32){
+	shootLazer();
+	playEffect(fireGun);
+}
+})// document.keydown()
+
+function gameLoop(){
+	var newTop = 0;
+	var newLeft= 0;
+	
+	if(dir.up){
+		newTop -= speed;
+	}
+	if(dir.down){
+		newTop += speed;
+	}
+	if(dir.left){
+		newLeft -= speed;
+	}
+	if(dir.right){
+		newLeft += speed;
+	}
+//values to check against for movement
+var dTop = falcon.position().top;
+var dLeft = falcon.position().left;
+var dHeight = falcon.outerHeight();
+var dWidth = falcon.outerWidth();
+var sHeight = stage.height();
+var sWidth = stage.width();
+if(dTop+newTop<0){
+	newTop = 0;
+	newTop -= dTop; 
+}
+//bottom wall
+if(dTop+newTop+dHeight>sHeight){
+	newTop = 0;
+	newTop += (sHeight-dTop-dHeight); 
+}
+if(dLeft+newLeft<0){
+	newLeft = 0;
+	newLeft -= dLeft; 
+}
+if(dLeft+newLeft+dWidth>sWidth){
+	newLeft = 0;
+	newLeft += (sWidth-dLeft-dWidth); 
+}
+// height and width of stage
+falcon.css({top:'+='+newTop, left:'+='+newLeft});
+
+if(gameRunning){	
+	 theLoop = window.requestAnimationFrame(gameLoop);
+}
+
+//LAZER VS ENEMY
+$('.lazer').each( function(){
+	var theLazer = $(this);
+		$('.enemy').each( function(){
+			if(recthit(theLazer, $(this))){
+				var enemy = $(this);
+				var	curhp = Number(enemy.data('hp'));
+				curhp--;
+				score++;
+				if($(this).hasClass('boss')){
+					bossLives--;
+					enemyLife();
+				}				
+					enemy.data('hp', curhp);
+					$('#score span').text(score);
+					theLazer.remove();
+				if(curhp<=0){
+					if(enemy.hasClass('tf2')){
+						points = 1;
+					}else{
+						points = 2;
+					}//end else points
+					if(enemy.hasClass('boss')){
+						clearInterval(createEnemyInt);
+						$('.enemy').remove();
+						next.show();
+						falcon.hide();
+						level++;
+							if(level==4){
+								gameWin();
+								$('#lifeBar').hide();
+								$('#score').hide();
+								bossBar.hide();
+
+							}//end level 3
+						next.click( function(){
+							$('#gameStart').trigger('click');
+					})//end next click
+					}//end if enemy.hasClass
+						enemy.remove();
+				}else{
+					points = 0;
+				}//end else points
+				score += points;
+				theLazer.remove();
+					if(score >=bossRelease && !bossCreated ){	
+						bossCreated = true;	
+						createBoss();
+						bossBar.show();						
+						}//end if score
+				}//end of rechit
+		})//end enemy.each
+})//end lazer.each()
+
+//ENEMY VS FALCON
+$('.enemy').each( function(){
+	if(recthit(falcon, $(this))){
+//remove enemy not falcon
+		var enemy = $(this);
+			if(enemy.hasClass('boss')){
+				gameOver();
+			}else{
+			$(this).remove();
+			lives--;
+			updateLifebar();	
+			}//end if boss
+		}//end recHit
+	})//end enemy.each();
+}//end gameLoop
+
+
+// FUNCTIONS 
+
+function createEnemy(){
+	if(gameRunning){
+	var enemy = $('<div>').addClass('enemy');
+//decide if this is an that is blue or purple
+	var randNum = Math.random();
+
+	if(randNum>.5){
+		enemy.addClass('tf2');
+		playEffect(tieFighter);
+		enemy.attr('data-hp', 1);
+	}else{
+		enemy.addClass('destroyer');
+		enemy.attr('data-hp', 2);
+	}
+//starting location for enemy
+var eLeft = stage.width()+100;
+var eTop = Math.random()*stage.height();//random 0 to stage height
+enemy.css({top:eTop, left:eLeft});
+
+
+//add to stage
+stage.append(enemy);
+enemy.animate({left: -100}, 4000, function(){
+	$(this).remove();
+})
+}//end if gameRunning
+}//end createEnemy
+
+function createBoss(){
+	var boss = $('<div>').addClass('boss enemy');
+//starting location for enemy
+	var eLeft = stage.width()+100;
+	var eTop = Math.random()*stage.height();
+		boss.attr('data-hp', 20);
+		boss.css({top:eTop, left:eLeft});
+//add to stage
+		stage.append(boss);
+//70% of stage width
+		bossPos = (stage.width()*.7);
+		boss.animate({left: bossPos}, 400, function(){
+			animateBoss($(this))  
+})//end boss.animate (function())
+		
+}//end createBoss
+
+function animateBoss(boss){
+var bHeight = boss.height();
+
+boss.animate({top:0}, 500).animate({top: stage.height()-bHeight}, 500, function(){
+	animateBoss($(this));	
+});
+}//end animateBoss
+
+
+function shootLazer(){
+	if(gameRunning){
+	var lazer = $('<div>').addClass('lazer');
+//apply coordinated relative to dragons durrnet position
+//static referenece
+	var dTop = falcon.position().top;
+	var dLeft= falcon.position().left;
+	dTop +=35;
+	dLeft +=75;
+//appends to stage
+	lazer.css({top:dTop, left:dLeft});
+	stage.append(lazer);
+	lazer.animate({left:stage.width()+50}, 1000, function(){
+		$(this).remove();
+	})//end shootLazer()
+}//end if gameRunning
+}//end shootlazer()
+
+
+function recthit(rectone, recttwo){
+    //console.log('recthit called');
+    var r1 = $(rectone);
+    var r2 = $(recttwo);
+    
+    var r1x = r1.offset().left;
+    var r1w = r1.width();
+    var r1y = r1.offset().top;
+    var r1h = r1.height();
+    
+    var r2x = r2.offset().left;
+    var r2w = r2.width();
+    var r2y = r2.offset().top;
+    var r2h = r2.height();
+    
+    if( r1y+r1h < r2y ||
+        r1y > r2y+r2h ||
+        r1x > r2x+r2w ||
+        r1x+r1w < r2x ){
+        //console.log('recthit-false')
+        return false;
+    }else{
+      //console.log('recthit-true')
+        return true;   
+    }
+    
+}//end function
+
+//LIFE BAR
+function updateLifebar(){
+	var percent = lives/10;
+	percent = percent*100;
+	$('#lifeBar .bar').animate({width:percent+'%'}, 400);
+
+	if(lives == 5){
+		$('#lifeBar .bar').css({'background-color': '#EF233C'});
+	}else if(lives <=0){
+		gameOver();
+	}
+
+}
+
+
+function enemyLife(){
+
+	var percent = bossLives/20;
+	percent = percent*100;
+	console.log('enemyLife',percent);
+	$('.bossLb').stop().animate({width:percent+'%'}, 100);
+}//end enemyLife
+
+function playEffect(track){
+	var tempSound = track.cloneNode();
+	if(sound){
+		tempSound.play();
+	}
+}
+
+
+
+$('#music').click(function(){
+	theText = $(this).text();
+
+	if(sound){
+		falconTheme.pause();
+		theText = theText.replace('ON', 'OFF');
+		$(this).css({'background-color':'#D80032'});
+		sound=false;
+	}else{
+		falconTheme.play();
+		sound = true;
+		theText = theText.replace('OFF', 'ON');
+		$(this).css({'background-color':'#2FF923'});
+	}
+	$(this).text(theText);
+})//end sound.clcikc
+
+
+function gameWin(){
+	next.hide();
+	clearInterval(createEnemyInt);
+	$('.enemy').remove();
+	falcon.destroy();
+	stage.hide();	
+	stage.destroy();						   
+	reStart.show();
+	gameRunning = false;
+	$('.again.win').click( function(){
+		score = 0;
+		
+		location.reload();				 				
+	});
+}
+function gameOver(){
+	clearInterval(createEnemyInt);
+		$('.enemy').remove();
+		falcon.destroy();
+		$(document).unbind();
+		gameRunning=false;
+		theLoop = null;
+		stage.destroy();
+		stage.html('<div class="over"><h1> GAME OVER LOSER!</h1><div class="button again">PLAY AGAIN</div></div>');
+		$('.again').click( function(){
+			score = 0;
+			location.reload();
+		})
+}
+</script>
+</body>
+</html>
